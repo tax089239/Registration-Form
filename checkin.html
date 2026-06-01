@@ -189,6 +189,9 @@ function render(data){
     <div class="name">${data.name || ""}</div>
     <div class="serial">${serial}</div>
   `;
+  setTimeout(()=>{
+  document.getElementById("name").focus();
+},100);
 }
 
 /* ===== loading UI ===== */

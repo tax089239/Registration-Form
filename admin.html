@@ -2,6 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>活動報到後台</title>
 
 <style>
@@ -14,7 +15,7 @@ body{
 
 .container{
   background:#fff;
-  max-width:1300px;
+  max-width:1200px;
   margin:auto;
   padding:20px;
   border-radius:20px;
@@ -40,7 +41,6 @@ h1{ margin-top:0; }
 .card div{
   font-size:26px;
   font-weight:bold;
-  margin-top:5px;
 }
 
 #search{
@@ -73,23 +73,16 @@ th{
 .status-done{ color:#2e7d32; font-weight:bold; }
 .status-bad{ color:#d32f2f; font-weight:bold; }
 
-/* 按鈕 */
 .btn{
   padding:6px 10px;
   border:none;
   border-radius:5px;
   cursor:pointer;
-  font-size:14px;
 }
 
 .btn-green{
   background:#2e7d32;
   color:#fff;
-}
-
-.btn-green:disabled{
-  background:#aaa;
-  cursor:not-allowed;
 }
 
 .small{
@@ -105,15 +98,13 @@ th{
 
 <h1>📊 活動報到後台</h1>
 
-<!-- 統計 -->
 <div class="stats">
   <div class="card">總數<div id="total">0</div></div>
   <div class="card">已報到<div id="checked">0</div></div>
   <div class="card">未報到<div id="notyet">0</div></div>
 </div>
 
-<!-- 搜尋 -->
-<input id="search" placeholder="搜尋姓名 / 電話 / 序號..." oninput="renderFiltered()">
+<input id="search" placeholder="搜尋姓名 / 電話 / 序號..." oninput="searchData()">
 
 <table>
 <thead>
@@ -138,28 +129,33 @@ const API = "https://script.google.com/macros/s/AKfycbx2fLcCaE7WIHoRNbJdtlrHQxO1
 
 let dataAll = [];
 let lock = false;
+let loading = false;
+let timer = null;
 
 /* 初始化 */
 window.onload = () => {
   load();
-  autoRefresh();
+  setInterval(load, 8000);
 };
 
-/* 🔥 降頻穩定更新 */
-function autoRefresh(){
-  setInterval(() => {
-    load(false);
-  }, 6000); // 👉 6秒（比你現在更穩）
+/* 安全 fetch */
+function fetchAll(){
+  return fetch(`${API}?action=all`).then(r => r.json());
 }
 
 /* 讀資料 */
 function load(){
-  fetch(`${API}?action=all`)
-    .then(r => r.json())
+
+  if(loading) return;
+  loading = true;
+
+  fetchAll()
     .then(res => {
-      dataAll = res;
-      render(res);
-    });
+      dataAll = res || [];
+      render(dataAll);
+      loading = false;
+    })
+    .catch(() => loading = false);
 }
 
 /* 渲染 */
@@ -167,55 +163,67 @@ function render(data){
 
   let html = "";
 
-  data.forEach(row => {
+  for(let i=0;i<data.length;i++){
 
-    const status = row.status || "未報到";
+    const r = data[i];
+    const status = r.status || "未報到";
 
     let cls = "";
     if(status === "已報到") cls = "status-done";
     else if(status === "報名成功") cls = "status-ok";
-    else if(status.includes("不成功")) cls = "status-bad";
+    else if(status && status.includes("不成功")) cls = "status-bad";
 
     let btn = "";
 
     if(status === "報名成功"){
       btn = `<button class="btn btn-green"
-              onclick="checkin('${row.code}', this)">
-              確認報到
+              onclick="checkin('${r.code}', this)">
+              確認
              </button>`;
-    } else if(status === "已報到"){
-      btn = `<span class="small">✔ 完成</span>`;
-    } else {
+    }
+    else if(status === "已報到"){
+      btn = `<span class="small">✔</span>`;
+    }
+    else{
       btn = `<span class="small">-</span>`;
     }
 
     html += `
-    <tr id="row-${row.code}">
-      <td>${row.serial || ""}</td>
-      <td>${row.name || ""}</td>
-      <td>${row.phone || ""}</td>
+    <tr>
+      <td>${r.serial || ""}</td>
+      <td>${r.name || ""}</td>
+      <td>${r.phone || ""}</td>
       <td class="${cls}">${status}</td>
-      <td>${row.time || ""}</td>
+      <td>${r.time || ""}</td>
       <td>${btn}</td>
     </tr>`;
-  });
+  }
 
   document.getElementById("tbody").innerHTML = html;
 
   updateStats(data);
 }
 
-/* 🔥 統計 */
+/* 統計 */
 function updateStats(data){
-  const total = data.filter(x => x.status && !x.status.includes("不成功")).length;
-  const checked = data.filter(x => x.status === "已報到").length;
+
+  let total = 0;
+  let checked = 0;
+
+  for(let i=0;i<data.length;i++){
+
+    const s = data[i].status || "";
+
+    if(s && !s.includes("不成功")) total++;
+    if(s === "已報到") checked++;
+  }
 
   document.getElementById("total").innerText = total;
   document.getElementById("checked").innerText = checked;
   document.getElementById("notyet").innerText = total - checked;
 }
 
-/* 🔥 報到（穩定版） */
+/* 報到（穩定版） */
 function checkin(code, btn){
 
   if(lock) return;
@@ -225,12 +233,9 @@ function checkin(code, btn){
 
   fetch(API, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
     body: JSON.stringify({
       action: "update",
-      code: code,
+      code,
       status: "已報到"
     })
   })
@@ -242,11 +247,10 @@ function checkin(code, btn){
 
     if(res.success){
 
-      // 🔥 不整頁 reload，只更新資料
-      const target = dataAll.find(x => x.code == code);
-      if(target){
-        target.status = "已報到";
-        target.time = "剛更新";
+      const item = dataAll.find(x => x.code == code);
+      if(item){
+        item.status = "已報到";
+        item.time = "剛更新";
       }
 
       render(dataAll);
@@ -262,23 +266,37 @@ function checkin(code, btn){
   });
 }
 
-/* 搜尋 */
-function renderFiltered(){
+/* 搜尋（防卡版） */
+function searchData(){
 
-  const key = document.getElementById("search").value.toLowerCase();
+  clearTimeout(timer);
 
-  if(!key){
-    render(dataAll);
-    return;
-  }
+  timer = setTimeout(() => {
 
-  const filtered = dataAll.filter(r =>
-    (r.name && r.name.includes(key)) ||
-    (r.phone && r.phone.includes(key)) ||
-    (String(r.serial).includes(key))
-  );
+    const key = document.getElementById("search").value.toLowerCase();
 
-  render(filtered);
+    if(!key){
+      render(dataAll);
+      return;
+    }
+
+    const filtered = [];
+
+    for(let i=0;i<dataAll.length;i++){
+      const r = dataAll[i];
+
+      if(
+        (r.name && r.name.includes(key)) ||
+        (r.phone && r.phone.includes(key)) ||
+        (String(r.serial).includes(key))
+      ){
+        filtered.push(r);
+      }
+    }
+
+    render(filtered);
+
+  }, 200);
 }
 
 </script>

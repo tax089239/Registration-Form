@@ -137,7 +137,7 @@ th{
 const API = "https://script.google.com/macros/s/AKfycbx2fLcCaE7WIHoRNbJdtlrHQxO1miu8wW6j0M2NfWRai4qO7l34rvTdeXuRUOfBRRx_/exec";
 
 let dataAll = [];
-let updating = false;
+let lock = false;
 
 /* 初始化 */
 window.onload = () => {
@@ -145,15 +145,15 @@ window.onload = () => {
   autoRefresh();
 };
 
-/* 定時刷新（低頻穩定版） */
+/* 🔥 降頻穩定更新 */
 function autoRefresh(){
   setInterval(() => {
     load(false);
-  }, 4000); // 4秒更新一次（穩定版）
+  }, 6000); // 👉 6秒（比你現在更穩）
 }
 
 /* 讀資料 */
-function load(showLoading=true){
+function load(){
   fetch(`${API}?action=all`)
     .then(r => r.json())
     .then(res => {
@@ -169,7 +169,7 @@ function render(data){
 
   data.forEach(row => {
 
-    let status = row.status || "未報到";
+    const status = row.status || "未報到";
 
     let cls = "";
     if(status === "已報到") cls = "status-done";
@@ -183,14 +183,14 @@ function render(data){
               onclick="checkin('${row.code}', this)">
               確認報到
              </button>`;
-    }else if(status === "已報到"){
+    } else if(status === "已報到"){
       btn = `<span class="small">✔ 完成</span>`;
-    }else{
+    } else {
       btn = `<span class="small">-</span>`;
     }
 
     html += `
-    <tr>
+    <tr id="row-${row.code}">
       <td>${row.serial || ""}</td>
       <td>${row.name || ""}</td>
       <td>${row.phone || ""}</td>
@@ -205,7 +205,7 @@ function render(data){
   updateStats(data);
 }
 
-/* 統計 */
+/* 🔥 統計 */
 function updateStats(data){
   const total = data.filter(x => x.status && !x.status.includes("不成功")).length;
   const checked = data.filter(x => x.status === "已報到").length;
@@ -215,36 +215,48 @@ function updateStats(data){
   document.getElementById("notyet").innerText = total - checked;
 }
 
-/* 報到 */
+/* 🔥 報到（穩定版） */
 function checkin(code, btn){
 
-  if(updating) return;
+  if(lock) return;
+  lock = true;
 
-  updating = true;
   btn.disabled = true;
 
   fetch(API, {
-    method:"POST",
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
-      action:"update",
-      code:code,
-      status:"已報到"
+      action: "update",
+      code: code,
+      status: "已報到"
     })
   })
   .then(r => r.json())
   .then(res => {
 
-    updating = false;
+    lock = false;
     btn.disabled = false;
 
     if(res.success){
-      load(); // 更新畫面
+
+      // 🔥 不整頁 reload，只更新資料
+      const target = dataAll.find(x => x.code == code);
+      if(target){
+        target.status = "已報到";
+        target.time = "剛更新";
+      }
+
+      render(dataAll);
+
     }else{
       alert("更新失敗");
     }
   })
   .catch(() => {
-    updating = false;
+    lock = false;
     btn.disabled = false;
     alert("網路錯誤");
   });
@@ -252,6 +264,7 @@ function checkin(code, btn){
 
 /* 搜尋 */
 function renderFiltered(){
+
   const key = document.getElementById("search").value.toLowerCase();
 
   if(!key){

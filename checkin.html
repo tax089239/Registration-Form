@@ -158,10 +158,13 @@ function render(data){
 
   // 未報名成功或沒有序號
   if(
-    !data.success ||
-    status !== "報名成功" ||
-    !serial
-  ){
+  !data.success ||
+  !serial ||
+  (
+    status !== "報名成功" &&
+    status !== "已報到"
+  )
+){
 
     result.innerHTML = `
       <div class="error">

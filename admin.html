@@ -72,8 +72,9 @@ th,td{
 
 th{ background:#1976d2; color:#fff; }
 
-.status-done{ color:#2e7d32; font-weight:bold; }
-.status-wait{ color:#ff9800; font-weight:bold; }
+.status-done{ color:#2e7d32; font-weight:bold;}
+.status-success{ color:#ff9800; font-weight:bold;}
+.status-error{ color:#d32f2f; font-weight:900;}
 
 #loginBox{
   position:fixed;
@@ -190,6 +191,12 @@ function render(data){
   let checked = 0;
   data.forEach(r=>{
     const status = r.checkinStatus || r.status || "";
+    let statusClass = "status-error";
+    if(status === "已報到"){
+    statusClass = "status-done";
+    }else if(status === "報名成功"){
+    statusClass = "status-success";
+    }
     if(r.name) total++;
     if(status === "已報到"){
       checked++;
@@ -199,7 +206,7 @@ function render(data){
       <td>${r.serial || ""}</td>
       <td>${r.name || ""}</td>
       <td>${r.phone || ""}</td>
-      <td class="${status==="已報到" ? "status-done" : "status-wait"}">
+      <td class="${statusClass}">
         ${status}
       </td>
       <td>${r.time || ""}</td>

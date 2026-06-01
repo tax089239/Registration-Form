@@ -6,94 +6,141 @@
 <title>活動報到系統</title>
 
 <style>
+/* 🔥 基礎設定 */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Microsoft JhengHei";
+  background: #f5f7fb;
+}
+
+/* 🔥 讓整體置中 + 防爆版 */
 body {
-  margin:0;
-  padding:20px;
-  font-family:"Microsoft JhengHei";
-  background:#f5f7fb;
-  text-align:center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
 }
 
+/* 🔥 主容器（核心修正） */
 .container {
-  max-width:500px;
-  margin:auto;
-  background:#fff;
-  padding:30px;
-  border-radius:20px;
+  width: 100%;
+  max-width: 520px;
+
+  /* 🔥 關鍵：避免超出螢幕 */
+  max-height: 95vh;
+  overflow-y: auto;
+
+  background: #fff;
+  padding: 24px;
+  border-radius: 20px;
+
+  /* 手機更安全 */
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
 }
 
+/* 🔥 結果區（避免撐爆） */
 #result {
-  margin-bottom: 20px;
-  min-height: 120px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
+  margin-bottom: 15px;
+  min-height: auto;   /* 🔥 改掉固定高度 */
+  max-height: 40vh;   /* 🔥 防止爆版 */
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
+/* 字體（改成 RWD） */
 .success {
-  color:#ff0000;
-  font-size:36pt;
-  font-weight:bold;
-  margin:10px 0;
+  color: #ff0000;
+  font-size: clamp(24px, 6vw, 36pt);
+  font-weight: bold;
+  margin: 10px 0;
+  text-align:center;
 }
 
 .name-display {
-  color:#000;
-  font-size:24pt;
-  margin:5px 0;
+  color: #000;
+  font-size: clamp(18px, 5vw, 24pt);
+  text-align:center;
 }
 
 .serial {
-  color:#ff9800;
-  font-size:48pt;
-  font-weight:bold;
-  margin:10px 0;
+  color: #ff9800;
+  font-size: clamp(28px, 8vw, 48pt);
+  font-weight: bold;
+  text-align:center;
 }
 
 .footer-note {
-  color:#666;
-  font-size:14pt;
-  margin-top:15px;
-  border-top:1px dashed #ccc;
-  padding-top:10px;
+  color: #666;
+  font-size: 14px;
+  margin-top: 12px;
+  border-top: 1px dashed #ccc;
+  padding-top: 10px;
+  text-align:center;
 }
 
+/* 錯誤 */
 .reject-msg {
-  color:#d32f2f;
-  font-size:24pt;
-  font-weight:bold;
-  line-height:1.5;
+  color: #d32f2f;
+  font-size: clamp(18px, 5vw, 24pt);
+  font-weight: bold;
+  text-align:center;
+  line-height:1.4;
 }
 
 .error {
-  color:#ff0000;
-  font-size:20pt;
-}
-
-input {
-  width:100%;
-  padding:15px;
-  margin:10px 0;
-  border-radius:10px;
-  border:1px solid #ccc;
+  color: #ff0000;
+  font-size: 18px;
   text-align:center;
-  font-size:16px;
 }
 
+/* input */
+input {
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  text-align: center;
+  font-size: 16px;
+}
+
+/* button */
 button {
-  width:100%;
-  padding:15px;
-  border:none;
-  background:#1976d2;
-  color:#fff;
-  border-radius:10px;
-  cursor:pointer;
-  font-size:18px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: #1976d2;
+  color: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 18px;
 }
 
 button:disabled {
-  background:#ccc;
+  background: #ccc;
+}
+
+/* 🔥 小螢幕優化 */
+@media (max-width: 480px) {
+  .container {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  input, button {
+    font-size: 16px;
+    padding: 12px;
+  }
 }
 </style>
 </head>

@@ -2,148 +2,139 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>活動序號查詢系統</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>活動報到後台（管理版）</title>
 
 <style>
-
-*{
-  box-sizing:border-box;
-}
-
-html,body{
-  margin:0;
-  padding:0;
-  font-family:"Microsoft JhengHei";
-  background:#f5f7fb;
-  height:100%;
-  overflow:hidden; /* 🔥 防手機鍵盤爆版核心 */
-}
-
-/* 🔥 改成安全滾動架構 */
 body{
-  display:block;
-  padding:16px;
+  font-family:"Microsoft JhengHei";
+  background:#f4f6f9;
+  margin:0;
+  padding:20px;
 }
 
-/* 🔥 主容器（不再 flex center） */
 .container{
-  width:100%;
-  max-width:520px;
-
-  height:calc(100vh - 32px); /* 🔥 核心修正 */
+  max-width:1200px;
   margin:auto;
-
   background:#fff;
-  padding:24px;
-  border-radius:20px;
-
-  display:flex;
-  flex-direction:column;
-
-  overflow:hidden;
-  box-shadow:0 6px 20px rgba(0,0,0,0.08);
+  padding:20px;
+  border-radius:16px;
 }
 
-/* 🔥 結果區可滾動 */
-#result{
+h1{ margin-top:0; }
+
+.stats{
+  display:flex;
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.card{
   flex:1;
-  overflow-y:auto;
-
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-
-  padding:10px 0;
-}
-
-/* 字體 RWD */
-.success{
-  color:#ff0000;
-  font-size:clamp(24px,6vw,36px);
-  font-weight:bold;
+  background:#1976d2;
+  color:#fff;
   text-align:center;
-}
-
-.name-display{
-  font-size:clamp(18px,5vw,24px);
-  text-align:center;
-}
-
-.serial{
-  color:#ff9800;
-  font-size:clamp(28px,8vw,48px);
-  font-weight:bold;
-  text-align:center;
-}
-
-.footer-note{
-  color:#666;
-  font-size:14px;
-  margin-top:10px;
-  text-align:center;
-  border-top:1px dashed #ccc;
-  padding-top:10px;
-}
-
-.reject-msg{
-  color:#d32f2f;
-  font-size:clamp(18px,5vw,24px);
-  font-weight:bold;
-  text-align:center;
-}
-
-.error{
-  color:#ff0000;
-  text-align:center;
-}
-
-/* input 固定底部區 */
-input{
-  width:100%;
-  padding:14px;
-  margin:6px 0;
+  padding:12px;
   border-radius:10px;
+}
+
+.card div{
+  font-size:24px;
+  font-weight:bold;
+}
+
+input, button{
+  padding:10px;
+  margin:5px 0;
+  border-radius:8px;
   border:1px solid #ccc;
-  text-align:center;
-  font-size:16px;
 }
 
 button{
-  width:100%;
-  padding:14px;
+  cursor:pointer;
   border:none;
-  background:#1976d2;
-  color:#fff;
-  border-radius:10px;
-  font-size:18px;
 }
 
-/* 🔥 手機安全 */
-@media (max-width:480px){
-  .container{
-    padding:16px;
-    border-radius:14px;
-  }
+.btn-green{ background:#2e7d32; color:#fff; }
+.btn-blue{ background:#1976d2; color:#fff; }
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
 }
 
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+  text-align:center;
+}
+
+th{ background:#1976d2; color:#fff; }
+
+.status-done{ color:#2e7d32; font-weight:bold; }
+.status-wait{ color:#ff9800; font-weight:bold; }
+
+/* 登入遮罩 */
+#loginBox{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:#000000aa;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.login-panel{
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  width:280px;
+  text-align:center;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-  <h2 style="text-align:center;margin:0 0 10px;">活動序號查詢</h2>
-
-  <div id="result"></div>
-
-  <div>
-    <input id="name" placeholder="姓名">
-    <input id="phone" placeholder="手機末三碼">
-    <button onclick="manualCheckin()">查詢</button>
+<!-- 登入 -->
+<div id="loginBox">
+  <div class="login-panel">
+    <h3>管理員登入</h3>
+    <input id="user" placeholder="帳號"><br>
+    <input id="pass" type="password" placeholder="密碼"><br>
+    <button class="btn-blue" onclick="login()">登入</button>
   </div>
+</div>
+
+<div class="container" id="main" style="display:none;">
+
+<h1>📊 活動報到後台（即時版）</h1>
+
+<div class="stats">
+  <div class="card">總數<div id="total">0</div></div>
+  <div class="card">已報到<div id="checked">0</div></div>
+  <div class="card">未報到<div id="notyet">0</div></div>
+</div>
+
+<button class="btn-blue" onclick="exportExcel()">📥 一鍵匯出 Excel</button>
+
+<input id="search" placeholder="搜尋姓名/電話/序號" oninput="searchData()">
+
+<table>
+<thead>
+<tr>
+  <th>序號</th>
+  <th>姓名</th>
+  <th>電話</th>
+  <th>狀態</th>
+  <th>時間</th>
+  <th>操作</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 
 </div>
 
@@ -151,75 +142,117 @@ button{
 
 const API = "https://script.google.com/macros/s/AKfycbzW_WJxAEJBvmEeHG5SfUZPsTV5M41ngYctUC6m65cVmf9RSIc3FcKBRddCubpmzd63/exec";
 
-let isLoading = false;
+let dataAll = [];
+let timer = null;
 
-function manualCheckin(){
-  if(isLoading) return;
+/* ===== 登入（簡易版） ===== */
+function login(){
+  const u = document.getElementById("user").value;
+  const p = document.getElementById("pass").value;
 
-  const btn = document.querySelector("button");
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-
-  if(!name || !phone){
-    alert("請輸入完整資料");
-    return;
+  if(u === "admin" && p === "1234"){
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("main").style.display="block";
+    load();
+    setInterval(load, 5000); // 即時同步
+  }else{
+    alert("帳號或密碼錯誤");
   }
-
-  isLoading = true;
-  btn.disabled = true;
-
-  sendCheckin(name, phone);
 }
 
-async function sendCheckin(name, phone){
-  try{
-    const url = `${API}?action=checkin&name=${encodeURIComponent(name)}&phone=${phone}`;
-    const res = await fetch(url);
-    const data = await res.json();
-
-    render(data);
-
-    if(data.success || data.already){
-      document.getElementById("name").value = "";
-      document.getElementById("phone").value = "";
-    }
-
-  }catch(e){
-    render({success:false,message:"連線失敗"});
-  }
-
-  setTimeout(()=>{
-    isLoading = false;
-    document.querySelector("button").disabled = false;
-  },600);
+/* ===== 讀取資料 ===== */
+function load(){
+  fetch(API+"?action=all")
+    .then(r=>r.json())
+    .then(res=>{
+      dataAll = res;
+      render(res);
+    });
 }
 
+/* ===== render ===== */
 function render(data){
 
-  if(data.status && (data.status.includes("不成功") || data.status.includes("未成功"))){
-    result().innerHTML = `<div class="reject-msg">報名未成功<br>請洽服務台</div>`;
-    return;
-  }
+  let html = "";
+  let total=0, checked=0;
 
-  if(data.success || data.already){
-    result().innerHTML = `
-      <div class="success">${data.already ? "已報到" : "報到成功"}</div>
-      <div class="name-display">${data.name || ""}</div>
-      <div class="serial">${data.serial || ""}</div>
-      <div class="footer-note">請至服務台兌換</div>
-    `;
-    return;
-  }
+  data.forEach(r=>{
 
-  result().innerHTML = `<div class="error">${data.message || "查無資料"}</div>`;
+    const status = r.checkinStatus || r.status || "";
+
+    if(status) total++;
+    if(status==="已報到") checked++;
+
+    html += `
+    <tr>
+      <td>${r.serial||""}</td>
+      <td>${r.name||""}</td>
+      <td>${r.phone||""}</td>
+      <td class="${status==="已報到"?"status-done":"status-wait"}">${status}</td>
+      <td>${r.time||""}</td>
+      <td>
+        ${status==="報名成功"
+          ? `<button class="btn-green" onclick="checkin('${r.code}',this)">報到</button>`
+          : "✔"}
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById("tbody").innerHTML = html;
+  document.getElementById("total").innerText = total;
+  document.getElementById("checked").innerText = checked;
+  document.getElementById("notyet").innerText = total-checked;
 }
 
-/* Enter送出 */
-document.addEventListener("keydown", e=>{
-  if(e.key==="Enter") manualCheckin();
-});
+/* ===== 報到 ===== */
+function checkin(code,btn){
 
-const result = ()=>document.getElementById("result");
+  btn.disabled=true;
+
+  fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"update",
+      code:code,
+      status:"已報到"
+    })
+  })
+  .then(r=>r.json())
+  .then(()=>{
+    load(); // 即時刷新
+  })
+  .finally(()=>btn.disabled=false);
+}
+
+/* ===== 搜尋 ===== */
+function searchData(){
+  const key=document.getElementById("search").value.toLowerCase();
+
+  const filtered=dataAll.filter(r=>
+    (r.name||"").includes(key) ||
+    (r.phone||"").includes(key) ||
+    String(r.serial||"").includes(key)
+  );
+
+  render(filtered);
+}
+
+/* ===== 一鍵匯出 Excel ===== */
+function exportExcel(){
+  let csv = "序號,姓名,電話,狀態,時間\n";
+
+  dataAll.forEach(r=>{
+    csv += `${r.serial||""},${r.name||""},${r.phone||""},${r.checkinStatus||""},${r.time||""}\n`;
+  });
+
+  const blob = new Blob([csv], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "報到名單.csv";
+  a.click();
+}
 
 </script>
 

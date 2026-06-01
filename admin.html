@@ -210,8 +210,8 @@ function render(data){
         <td>
           ${
             status === "已報到"
-            ? "✔"
-            : `<button class="btn-green" onclick="checkin('${r.code}',this)">報到</button>`
+              ? `<span style="color:#2e7d32;font-weight:bold;">✔ 已報到</span>`
+              : `<button class="btn-green" onclick="checkin('${r.code}',this)">報到</button>`
           }
         </td>
       </tr>

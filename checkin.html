@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>活動報到查詢</title>
+<title>活動序號查詢</title>
 
 <style>
 body {
@@ -111,15 +111,15 @@ input{
 
 <body>
   <div class="container">
-    <h2 style="text-align:center; margin-top:0; color:#333;">活動報到查詢</h2>
+    <h2 style="text-align:center; margin-top:0; color:#333;">活動序號查詢</h2>
     
     <div id="result">
-        <div style="text-align:center; color:#999;">請輸入資料進行報到</div>
+        <div style="text-align:center; color:#999;">請輸入資料進行查詢</div>
     </div>
 
     <input id="name" type="text" placeholder="姓名" autocomplete="off">
     <input id="phone" type="tel" placeholder="手機末三碼" maxlength="3">
-    <button onclick="submit()">查詢 / 報到</button>
+    <button onclick="submit()">查詢 </button>
   </div>
 
 <script>
@@ -148,7 +148,6 @@ function submit(){
     });
 }
 
-/* ===== UI 顯示 ===== */
 /* ===== UI 顯示 ===== */
 function render(data){
 

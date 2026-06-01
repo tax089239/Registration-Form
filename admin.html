@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>活動報到後台（管理版）</title>
+<title> 活動報到後台 </title>
 
 <style>
 body{
@@ -75,7 +75,6 @@ th{ background:#1976d2; color:#fff; }
 .status-done{ color:#2e7d32; font-weight:bold; }
 .status-wait{ color:#ff9800; font-weight:bold; }
 
-/* 登入遮罩 */
 #loginBox{
   position:fixed;
   top:0;left:0;
@@ -110,7 +109,13 @@ th{ background:#1976d2; color:#fff; }
 
 <div class="container" id="main" style="display:none;">
 
-<h1>📊 活動報到後台（即時版）</h1>
+<h1>
+  📊 活動報到後台
+  <span id="syncStatus"
+        style="font-size:14px;margin-left:10px;color:#2e7d32;">
+    🟢 已連線
+  </span>
+</h1>
 
 <div class="stats">
   <div class="card">總數<div id="total">0</div></div>
@@ -118,7 +123,7 @@ th{ background:#1976d2; color:#fff; }
   <div class="card">未報到<div id="notyet">0</div></div>
 </div>
 
-<button class="btn-blue" onclick="exportExcel()">📥 一鍵匯出 Excel</button>
+<button class="btn-blue" onclick="exportExcel()">📥 匯出 CSV</button>
 
 <input id="search" placeholder="搜尋姓名/電話/序號" oninput="searchData()">
 
@@ -142,58 +147,97 @@ th{ background:#1976d2; color:#fff; }
 
 const API = "https://script.google.com/macros/s/AKfycbzGuH6GDFiFz6kbrT64x88Pq33ll0rHpNOe7HpM8ydlD8tAsBHMnSKvLjJA4HZDHovg/exec";
 
+/* ===== 狀態 ===== */
 let dataAll = [];
-let timer = null;
+let searchTimer = null;
+let lastHash = "";
+const checkinLock = new Set();
+let loading = false;
+let searching = false;
+let syncTimer = null;
 
-/* ===== 登入（簡易版） ===== */
+/* ===== 登入 ===== */
 function login(){
-  const u = document.getElementById("user").value;
-  const p = document.getElementById("pass").value;
-
-  if(u === "admin" && p === "1234"){
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("main").style.display="block";
-    load();
-    setInterval(load, 5000); // 即時同步
+  const u = document.getElementById("user").value.trim();
+  const p = document.getElementById("pass").value.trim();
+  if(u === "admin" && p === "231600"){
+    localStorage.setItem("login","1");
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("main").style.display = "block";
+    start();
   }else{
     alert("帳號或密碼錯誤");
   }
 }
 
-/* ===== 讀取資料 ===== */
-function load(){
-  fetch(API+"?action=all")
-    .then(r=>r.json())
-    .then(res=>{
-      dataAll = res;
-      render(res);
-    });
+/* ===== 自動登入 ===== */
+window.onload = () => {
+  if(localStorage.getItem("login")==="1"){
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("main").style.display = "block";
+    start();
+  }
+};
+
+/* ===== 啟動同步 ===== */
+function start(){
+  load();
+  if(syncTimer){
+    clearInterval(syncTimer);
+  }
+  syncTimer = setInterval(load, 2000);
 }
-
-/* ===== render ===== */
+  
+/* ===== 讀取資料 ===== */
+async function load(){
+  if(loading) return;
+  if(searching) return;
+  loading = true;
+  try{
+    const res = await fetch(API + "?action=all");
+    const data = await res.json();
+    document.getElementById("syncStatus").innerText =
+      "🟢 已連線";
+    const hash = JSON.stringify(data);
+    if(hash === lastHash) return;
+    lastHash = hash;
+    dataAll = data;
+    render(data);
+  }catch(err){
+    console.error(err);
+    document.getElementById("syncStatus").innerText =
+      "🔴 連線失敗";
+  }finally{
+    loading = false;
+  }
+}
+  
+/* ===== 畫面更新 ===== */
 function render(data){
-
   let html = "";
-  let total=0, checked=0;
-
+  let total = 0;
+  let checked = 0;
   data.forEach(r=>{
-
     const status = r.checkinStatus || r.status || "";
-
-    if(status) total++;
-    if(status==="已報到") checked++;
-
+    if(r.name) total++;
+    if(status === "已報到"){
+      checked++;
+    }
     html += `
     <tr>
-      <td>${r.serial||""}</td>
-      <td>${r.name||""}</td>
-      <td>${r.phone||""}</td>
-      <td class="${status==="已報到"?"status-done":"status-wait"}">${status}</td>
-      <td>${r.time||""}</td>
+      <td>${r.serial || ""}</td>
+      <td>${r.name || ""}</td>
+      <td>${r.phone || ""}</td>
+      <td class="${status==="已報到" ? "status-done" : "status-wait"}">
+        ${status}
+      </td>
+      <td>${r.time || ""}</td>
       <td>
-        ${status==="報名成功"
+        ${
+          status === "報名成功"
           ? `<button class="btn-green" onclick="checkin('${r.code}',this)">報到</button>`
-          : "✔"}
+          : "✔"
+        }
       </td>
     </tr>`;
   });
@@ -201,16 +245,21 @@ function render(data){
   document.getElementById("tbody").innerHTML = html;
   document.getElementById("total").innerText = total;
   document.getElementById("checked").innerText = checked;
-  document.getElementById("notyet").innerText = total-checked;
+  document.getElementById("notyet").innerText = total - checked;
 }
 
 /* ===== 報到 ===== */
 function checkin(code,btn){
-
-  btn.disabled=true;
-
+  if(btn.disabled) return;
+  if(checkinLock.has(code)) return;
+  checkinLock.add(code);
+  btn.disabled = true;
+  btn.innerText = "處理中...";
   fetch(API,{
     method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
     body:JSON.stringify({
       action:"update",
       code:code,
@@ -219,41 +268,77 @@ function checkin(code,btn){
   })
   .then(r=>r.json())
   .then(()=>{
-    load(); // 即時刷新
+    load();
   })
-  .finally(()=>btn.disabled=false);
+  .catch(err=>{
+    console.error(err);
+    alert("報到失敗");
+  })
+  .finally(()=>{
+    setTimeout(()=>{
+      checkinLock.delete(code);
+      btn.disabled = false;
+      btn.innerText = "報到";
+    },800);
+  });
 }
 
 /* ===== 搜尋 ===== */
 function searchData(){
-  const key=document.getElementById("search").value.toLowerCase();
-
-  const filtered=dataAll.filter(r=>
-    (r.name||"").includes(key) ||
-    (r.phone||"").includes(key) ||
-    String(r.serial||"").includes(key)
-  );
-
-  render(filtered);
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(()=>{
+    const key =
+      document.getElementById("search")
+      .value
+      .trim()
+      .toLowerCase();
+    if(!key){
+      searching = false;
+      render(dataAll);
+      return;
+    }
+    searching = true;
+    const filtered = dataAll.filter(r =>
+      (r.name || "")
+      .toLowerCase()
+      .includes(key)
+      ||
+      String(r.phone || "")
+      .includes(key)
+      ||
+      String(r.serial || "")
+      .toLowerCase()
+      .includes(key)
+    );
+    render(filtered);
+  },200);
 }
 
-/* ===== 一鍵匯出 Excel ===== */
+/* ===== 匯出CSV ===== */
 function exportExcel(){
-  let csv = "序號,姓名,電話,狀態,時間\n";
-
+  let csv = "\uFEFF序號,姓名,電話,狀態,時間\n";
   dataAll.forEach(r=>{
-    csv += `${r.serial||""},${r.name||""},${r.phone||""},${r.checkinStatus||""},${r.time||""}\n`;
+    csv +=
+      `${r.serial || ""},` +
+      `${r.name || ""},` +
+      `${r.phone || ""},` +
+      `${r.checkinStatus || r.status || ""},` +
+      `${r.time || ""}\n`;
   });
-
-  const blob = new Blob([csv], {type:"text/csv"});
+  const blob = new Blob(
+    [csv],
+    {type:"text/csv;charset=utf-8;"}
+  );
   const url = URL.createObjectURL(blob);
-
   const a = document.createElement("a");
   a.href = url;
   a.download = "報到名單.csv";
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
-
+  
 </script>
 
 </body>

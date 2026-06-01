@@ -150,49 +150,33 @@ function submit(){
 
 /* ===== UI 顯示 ===== */
 function render(data){
-
   const result = document.getElementById("result");
-
-  const status = data.status || data.checkinStatus || "";
   const serial = data.serial || "";
-
-  // 未報名成功或沒有序號
-  if(
-  !data.success ||
-  !serial ||
-  (
-    status !== "報名成功" &&
-    status !== "已報到"
-  )
-){
-
+  // ❌ 查無資料
+  if(!data.success || !serial){
+    result.innerHTML = `
+      <div class="error">
+        您並未報名成功<br>
+        如有疑問請至服務台洽詢
+      </div>
+    `;
+    const name = document.getElementById("name");
+    name.focus();
+    name.select();
+    return;
+  }
+  // ✅ 成功顯示（查詢 ≠ 報到）
   result.innerHTML = `
-    <div class="error">
-      您並未報名成功<br>
-      如有疑問請至服務台洽詢
-    </div>
+    <div class="name">${data.name || ""}</div>
+    <div class="serial">${serial}</div>
   `;
-
-  const name = document.getElementById("name");
-  name.focus();
-  name.select();
-  return;
-}
-
-  // 成功清空欄位
+  // 清空輸入
   document.getElementById("name").value = "";
   document.getElementById("phone").value = "";
-
-result.innerHTML = `
-  <div class="success">
-    ${data.already ? "請至服務台完成報到程序" : ""}
-  </div>
-  <div class="name">${data.name || ""}</div>
-  <div class="serial">${serial}</div>
-`;
+  // 回到第一格
   setTimeout(()=>{
-  document.getElementById("name").focus();
-},100);
+    document.getElementById("name").focus();
+  },100);
 }
 
 /* ===== loading UI ===== */

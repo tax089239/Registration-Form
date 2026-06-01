@@ -139,7 +139,7 @@ function submit(){
   }
   loading = true;
   setLoading(true);
-  fetch(`${API}?action=checkin&name=${encodeURIComponent(name)}&phone=${phone}`)
+  fetch(`${API}?action=check&name=${encodeURIComponent(name)}&phone=${phone}`)
     .then(r => r.json())
     .then(res => render(res))
     .finally(()=>{

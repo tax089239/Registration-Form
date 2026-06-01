@@ -132,7 +132,7 @@ let lastEnter = 0;
 function submit(){
   if(loading) return;
   const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
+  const phone = document.getElementById("phone").value.trim().slice(-3);
   if(!name || !phone){
     alert("請輸入完整資料");
     return;

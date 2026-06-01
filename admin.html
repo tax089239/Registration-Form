@@ -3,57 +3,138 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>活動報到查詢</title>
+<title>活動報到後台（管理版）</title>
 
 <style>
 body{
   font-family:"Microsoft JhengHei";
-  background:#f5f7fb;
+  background:#f4f6f9;
   margin:0;
-  padding:16px;
+  padding:20px;
 }
 
 .container{
-  max-width:520px;
+  max-width:1200px;
   margin:auto;
   background:#fff;
   padding:20px;
   border-radius:16px;
 }
 
-input,button{
-  width:100%;
+h1{ margin-top:0; }
+
+.stats{
+  display:flex;
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.card{
+  flex:1;
+  background:#1976d2;
+  color:#fff;
+  text-align:center;
   padding:12px;
-  margin:6px 0;
   border-radius:10px;
+}
+
+.card div{
+  font-size:24px;
+  font-weight:bold;
+}
+
+input, button{
+  padding:10px;
+  margin:5px 0;
+  border-radius:8px;
   border:1px solid #ccc;
 }
 
 button{
-  background:#1976d2;
-  color:#fff;
+  cursor:pointer;
   border:none;
 }
 
-.success{ color:#2e7d32; font-size:22px; font-weight:bold; text-align:center; }
-.error{ color:#d32f2f; text-align:center; }
-.name{ text-align:center; font-size:18px; }
-.serial{ text-align:center; font-size:30px; font-weight:bold; color:#ff9800; }
+.btn-green{ background:#2e7d32; color:#fff; }
+.btn-blue{ background:#1976d2; color:#fff; }
 
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+  text-align:center;
+}
+
+th{ background:#1976d2; color:#fff; }
+
+.status-done{ color:#2e7d32; font-weight:bold; }
+.status-wait{ color:#ff9800; font-weight:bold; }
+
+/* 登入遮罩 */
+#loginBox{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:#000000aa;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.login-panel{
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  width:280px;
+  text-align:center;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<!-- 登入 -->
+<div id="loginBox">
+  <div class="login-panel">
+    <h3>管理員登入</h3>
+    <input id="user" placeholder="帳號"><br>
+    <input id="pass" type="password" placeholder="密碼"><br>
+    <button class="btn-blue" onclick="login()">登入</button>
+  </div>
+</div>
 
-<h3 style="text-align:center;">活動報到查詢</h3>
+<div class="container" id="main" style="display:none;">
 
-<div id="result"></div>
+<h1>📊 活動報到後台（即時版）</h1>
 
-<input id="name" placeholder="姓名">
-<input id="phone" placeholder="手機末三碼">
-<button onclick="submit()">查詢 / 報到</button>
+<div class="stats">
+  <div class="card">總數<div id="total">0</div></div>
+  <div class="card">已報到<div id="checked">0</div></div>
+  <div class="card">未報到<div id="notyet">0</div></div>
+</div>
+
+<button class="btn-blue" onclick="exportExcel()">📥 一鍵匯出 Excel</button>
+
+<input id="search" placeholder="搜尋姓名/電話/序號" oninput="searchData()">
+
+<table>
+<thead>
+<tr>
+  <th>序號</th>
+  <th>姓名</th>
+  <th>電話</th>
+  <th>狀態</th>
+  <th>時間</th>
+  <th>操作</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 
 </div>
 
@@ -61,45 +142,116 @@ button{
 
 const API = "https://script.google.com/macros/s/AKfycbzW_WJxAEJBvmEeHG5SfUZPsTV5M41ngYctUC6m65cVmf9RSIc3FcKBRddCubpmzd63/exec";
 
-let loading=false;
+let dataAll = [];
+let timer = null;
 
-function submit(){
+/* ===== 登入（簡易版） ===== */
+function login(){
+  const u = document.getElementById("user").value;
+  const p = document.getElementById("pass").value;
 
-  if(loading) return;
-
-  const name=document.getElementById("name").value;
-  const phone=document.getElementById("phone").value;
-
-  if(!name||!phone){
-    alert("請輸入完整資料");
-    return;
+  if(u === "admin" && p === "1234"){
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("main").style.display="block";
+    load();
+    setInterval(load, 5000); // 即時同步
+  }else{
+    alert("帳號或密碼錯誤");
   }
-
-  loading=true;
-
-  fetch(`${API}?action=checkin&name=${encodeURIComponent(name)}&phone=${phone}`)
-  .then(r=>r.json())
-  .then(res=>{
-    render(res);
-  })
-  .finally(()=>{
-    loading=false;
-  });
 }
 
+/* ===== 讀取資料 ===== */
+function load(){
+  fetch(API+"?action=all")
+    .then(r=>r.json())
+    .then(res=>{
+      dataAll = res;
+      render(res);
+    });
+}
+
+/* ===== render ===== */
 function render(data){
 
-  if(!data.success){
-    document.getElementById("result").innerHTML=
-    `<div class="error">${data.message||"查無資料"}</div>`;
-    return;
-  }
+  let html = "";
+  let total=0, checked=0;
 
-  document.getElementById("result").innerHTML=`
-    <div class="success">${data.already?"已報到":"報到成功"}</div>
-    <div class="name">${data.name||""}</div>
-    <div class="serial">${data.serial||""}</div>
-  `;
+  data.forEach(r=>{
+
+    const status = r.checkinStatus || r.status || "";
+
+    if(status) total++;
+    if(status==="已報到") checked++;
+
+    html += `
+    <tr>
+      <td>${r.serial||""}</td>
+      <td>${r.name||""}</td>
+      <td>${r.phone||""}</td>
+      <td class="${status==="已報到"?"status-done":"status-wait"}">${status}</td>
+      <td>${r.time||""}</td>
+      <td>
+        ${status==="報名成功"
+          ? `<button class="btn-green" onclick="checkin('${r.code}',this)">報到</button>`
+          : "✔"}
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById("tbody").innerHTML = html;
+  document.getElementById("total").innerText = total;
+  document.getElementById("checked").innerText = checked;
+  document.getElementById("notyet").innerText = total-checked;
+}
+
+/* ===== 報到 ===== */
+function checkin(code,btn){
+
+  btn.disabled=true;
+
+  fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"update",
+      code:code,
+      status:"已報到"
+    })
+  })
+  .then(r=>r.json())
+  .then(()=>{
+    load(); // 即時刷新
+  })
+  .finally(()=>btn.disabled=false);
+}
+
+/* ===== 搜尋 ===== */
+function searchData(){
+  const key=document.getElementById("search").value.toLowerCase();
+
+  const filtered=dataAll.filter(r=>
+    (r.name||"").includes(key) ||
+    (r.phone||"").includes(key) ||
+    String(r.serial||"").includes(key)
+  );
+
+  render(filtered);
+}
+
+/* ===== 一鍵匯出 Excel ===== */
+function exportExcel(){
+  let csv = "序號,姓名,電話,狀態,時間\n";
+
+  dataAll.forEach(r=>{
+    csv += `${r.serial||""},${r.name||""},${r.phone||""},${r.checkinStatus||""},${r.time||""}\n`;
+  });
+
+  const blob = new Blob([csv], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "報到名單.csv";
+  a.click();
 }
 
 </script>

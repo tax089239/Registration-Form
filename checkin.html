@@ -165,18 +165,16 @@ function render(data){
     status !== "已報到"
   )
 ){
-
-    result.innerHTML = `
-      <div class="error">
-        您並未報名成功<br>
-        如有疑問請至服務台洽詢
-      </div>
-    `;
-
+ result.innerHTML = `
+  <div class="success">
+    ${data.already ? "請至服務台完成報到程序" : ""}
+  </div>
+  <div class="name">${data.name || ""}</div>
+  <div class="serial">${serial}</div>
+`;
     const name = document.getElementById("name");
     name.focus();
     name.select();
-
     return;
   }
 

@@ -115,7 +115,11 @@ button:disabled {
 
 const API = "https://script.google.com/macros/s/AKfycbx2fLcCaE7WIHoRNbJdtlrHQxO1miu8wW6j0M2NfWRai4qO7l34rvTdeXuRUOfBRRx_/exec";
 
+let isLoading = false; // 🔥 防重複點擊
+
 function manualCheckin(){
+  if(isLoading) return; // 🔥 防連點
+
   const btn = document.querySelector("button");
   const name = nameInput().value.trim();
   const phone = phoneInput().value.trim();
@@ -125,12 +129,10 @@ function manualCheckin(){
     return;
   }
 
+  isLoading = true; // 🔥 鎖定
   btn.disabled = true;
-  sendCheckin(name, phone);
 
-  setTimeout(() => {
-    btn.disabled = false;
-  }, 2000);
+  sendCheckin(name, phone);
 }
 
 async function sendCheckin(name, phone){
@@ -138,22 +140,37 @@ async function sendCheckin(name, phone){
     const url = `${API}?action=checkin&name=${encodeURIComponent(name)}&phone=${phone}`;
     const res = await fetch(url);
     const data = await res.json();
+
     render(data);
+
+    // 🔥 成功後清空欄位
+    if(data.success || data.already){
+      nameInput().value = "";
+      phoneInput().value = "";
+      nameInput().focus();
+    }
+
   } catch(err){
     render({ success:false, message:"系統連線失敗" });
   }
+
+  // 🔥 解鎖按鈕
+  setTimeout(() => {
+    isLoading = false;
+    document.querySelector("button").disabled = false;
+  }, 800);
 }
 
 function render(data){
 
-  // 1. 報名不成功
+  // 1. 不成功
   if (data.status && (data.status.includes("不成功") || data.status.includes("未成功"))) {
     result().innerHTML =
       `<div class="reject-msg">您的報名不成功，<br>請至服務台洽詢。</div>`;
     return;
   }
 
-  // 2. 已報到 / 成功
+  // 2. 成功 / 已報到
   if(data.already || data.success){
     const title = data.already ? "已報到" : "報到成功";
 
@@ -170,6 +187,13 @@ function render(data){
   result().innerHTML =
     `<div class="error">${data.message || "查無報名資料"}</div>`;
 }
+
+/* 🔥 Enter鍵送出 */
+document.addEventListener("keydown", function(e){
+  if(e.key === "Enter"){
+    manualCheckin();
+  }
+});
 
 const result = () => document.getElementById("result");
 const nameInput = () => document.getElementById("name");

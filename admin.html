@@ -136,7 +136,7 @@ th{ background:#1976d2; color:#fff; }
 
 <script>
 
-const API = "https://script.google.com/macros/s/AKfycbzGuH6GDFiFz6kbrT64x88Pq33ll0rHpNOe7HpM8ydlD8tAsBHMnSKvLjJA4HZDHovg/exec";
+const API = "https://script.google.com/macros/s/AKfycbxHUgAVDg8HvPyvdB6XqpDP9-7BKVVztGFMRvyzai9u3JySDeDjxylHnijwsYe5EbQ/exec";
 
 /* ===== 狀態 ===== */
 let dataAll = [];
@@ -189,37 +189,34 @@ function render(data){
   let html = "";
   let total = 0;
   let checked = 0;
-  data.forEach(r=>{
-    const status = r.checkinStatus || r.status || "";
+  data.forEach(r => {
+    const status = r.checkinStatus || "";
+    const time = r.time || "";
     let statusClass = "status-error";
-    if(status === "已報到"){
-    statusClass = "status-done";
-    }else if(status === "報名成功"){
-    statusClass = "status-success";
-    }
-    if(r.name) total++;
-    if(status === "已報到"){
+    if (status === "已報到") {
+      statusClass = "status-done";
       checked++;
     }
+    if (r.name) total++;
     html += `
-    <tr>
-      <td>${r.serial || ""}</td>
-      <td>${r.name || ""}</td>
-      <td>${r.phone || ""}</td>
-      <td class="${statusClass}">
-        ${status}
-      </td>
-      <td>${r.time || ""}</td>
-      <td>
-        ${
-          status === "報名成功"
-          ? `<button class="btn-green" onclick="checkin('${r.code}',this)">報到</button>`
-          : "✔"
-        }
-      </td>
-    </tr>`;
+      <tr>
+        <td>${r.serial || ""}</td>
+        <td>${r.name || ""}</td>
+        <td>${r.phone || ""}</td>
+        <td class="${statusClass}">
+          ${status || "未報到"}
+        </td>
+        <td>${time}</td>
+        <td>
+          ${
+            status === "已報到"
+            ? "✔"
+            : `<button class="btn-green" onclick="checkin('${r.code}',this)">報到</button>`
+          }
+        </td>
+      </tr>
+    `;
   });
-
   document.getElementById("tbody").innerHTML = html;
   document.getElementById("total").innerText = total;
   document.getElementById("checked").innerText = checked;

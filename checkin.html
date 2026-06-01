@@ -2,249 +2,224 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>活動序號查詢系統</title>
 
 <style>
-/* 🔥 基礎設定 */
-* {
-  box-sizing: border-box;
+
+*{
+  box-sizing:border-box;
 }
 
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: "Microsoft JhengHei";
-  background: #f5f7fb;
+html,body{
+  margin:0;
+  padding:0;
+  font-family:"Microsoft JhengHei";
+  background:#f5f7fb;
+  height:100%;
+  overflow:hidden; /* 🔥 防手機鍵盤爆版核心 */
 }
 
-/* 🔥 讓整體置中 + 防爆版 */
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 16px;
+/* 🔥 改成安全滾動架構 */
+body{
+  display:block;
+  padding:16px;
 }
 
-/* 🔥 主容器（核心修正） */
-.container {
-  width: 100%;
-  max-width: 520px;
+/* 🔥 主容器（不再 flex center） */
+.container{
+  width:100%;
+  max-width:520px;
 
-  /* 🔥 關鍵：避免超出螢幕 */
-  max-height: 95vh;
-  overflow-y: auto;
+  height:calc(100vh - 32px); /* 🔥 核心修正 */
+  margin:auto;
 
-  background: #fff;
-  padding: 24px;
-  border-radius: 20px;
+  background:#fff;
+  padding:24px;
+  border-radius:20px;
 
-  /* 手機更安全 */
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  display:flex;
+  flex-direction:column;
+
+  overflow:hidden;
+  box-shadow:0 6px 20px rgba(0,0,0,0.08);
 }
 
-/* 🔥 結果區（避免撐爆） */
-#result {
-  margin-bottom: 15px;
-  min-height: auto;   /* 🔥 改掉固定高度 */
-  max-height: 40vh;   /* 🔥 防止爆版 */
-  overflow-y: auto;
+/* 🔥 結果區可滾動 */
+#result{
+  flex:1;
+  overflow-y:auto;
 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+
+  padding:10px 0;
 }
 
-/* 字體（改成 RWD） */
-.success {
-  color: #ff0000;
-  font-size: clamp(24px, 6vw, 36pt);
-  font-weight: bold;
-  margin: 10px 0;
+/* 字體 RWD */
+.success{
+  color:#ff0000;
+  font-size:clamp(24px,6vw,36px);
+  font-weight:bold;
   text-align:center;
 }
 
-.name-display {
-  color: #000;
-  font-size: clamp(18px, 5vw, 24pt);
+.name-display{
+  font-size:clamp(18px,5vw,24px);
   text-align:center;
 }
 
-.serial {
-  color: #ff9800;
-  font-size: clamp(28px, 8vw, 48pt);
-  font-weight: bold;
+.serial{
+  color:#ff9800;
+  font-size:clamp(28px,8vw,48px);
+  font-weight:bold;
   text-align:center;
 }
 
-.footer-note {
-  color: #666;
-  font-size: 14px;
-  margin-top: 12px;
-  border-top: 1px dashed #ccc;
-  padding-top: 10px;
+.footer-note{
+  color:#666;
+  font-size:14px;
+  margin-top:10px;
+  text-align:center;
+  border-top:1px dashed #ccc;
+  padding-top:10px;
+}
+
+.reject-msg{
+  color:#d32f2f;
+  font-size:clamp(18px,5vw,24px);
+  font-weight:bold;
   text-align:center;
 }
 
-/* 錯誤 */
-.reject-msg {
-  color: #d32f2f;
-  font-size: clamp(18px, 5vw, 24pt);
-  font-weight: bold;
-  text-align:center;
-  line-height:1.4;
-}
-
-.error {
-  color: #ff0000;
-  font-size: 18px;
+.error{
+  color:#ff0000;
   text-align:center;
 }
 
-/* input */
-input {
-  width: 100%;
-  padding: 14px;
-  margin: 8px 0;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  text-align: center;
-  font-size: 16px;
+/* input 固定底部區 */
+input{
+  width:100%;
+  padding:14px;
+  margin:6px 0;
+  border-radius:10px;
+  border:1px solid #ccc;
+  text-align:center;
+  font-size:16px;
 }
 
-/* button */
-button {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  background: #1976d2;
-  color: #fff;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 18px;
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  background:#1976d2;
+  color:#fff;
+  border-radius:10px;
+  font-size:18px;
 }
 
-button:disabled {
-  background: #ccc;
-}
-
-/* 🔥 小螢幕優化 */
-@media (max-width: 480px) {
-  .container {
-    padding: 16px;
-    border-radius: 14px;
-  }
-
-  input, button {
-    font-size: 16px;
-    padding: 12px;
+/* 🔥 手機安全 */
+@media (max-width:480px){
+  .container{
+    padding:16px;
+    border-radius:14px;
   }
 }
+
 </style>
 </head>
 
 <body>
 
 <div class="container">
-  <h1>活動序號查詢系統</h1>
+
+  <h2 style="text-align:center;margin:0 0 10px;">活動序號查詢</h2>
 
   <div id="result"></div>
 
-  <input id="name" placeholder="姓名">
-  <input id="phone" placeholder="手機末三碼">
+  <div>
+    <input id="name" placeholder="姓名">
+    <input id="phone" placeholder="手機末三碼">
+    <button onclick="manualCheckin()">查詢</button>
+  </div>
 
-  <button onclick="manualCheckin()">查詢</button>
 </div>
 
 <script>
 
 const API = "https://script.google.com/macros/s/AKfycbx2fLcCaE7WIHoRNbJdtlrHQxO1miu8wW6j0M2NfWRai4qO7l34rvTdeXuRUOfBRRx_/exec";
 
-let isLoading = false; // 🔥 防重複點擊
+let isLoading = false;
 
 function manualCheckin(){
-  if(isLoading) return; // 🔥 防連點
+  if(isLoading) return;
 
   const btn = document.querySelector("button");
-  const name = nameInput().value.trim();
-  const phone = phoneInput().value.trim();
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
 
   if(!name || !phone){
     alert("請輸入完整資料");
     return;
   }
 
-  isLoading = true; // 🔥 鎖定
+  isLoading = true;
   btn.disabled = true;
 
   sendCheckin(name, phone);
 }
 
 async function sendCheckin(name, phone){
-  try {
+  try{
     const url = `${API}?action=checkin&name=${encodeURIComponent(name)}&phone=${phone}`;
     const res = await fetch(url);
     const data = await res.json();
 
     render(data);
 
-    // 🔥 成功後清空欄位
     if(data.success || data.already){
-      nameInput().value = "";
-      phoneInput().value = "";
-      nameInput().focus();
+      document.getElementById("name").value = "";
+      document.getElementById("phone").value = "";
     }
 
-  } catch(err){
-    render({ success:false, message:"系統連線失敗" });
+  }catch(e){
+    render({success:false,message:"連線失敗"});
   }
 
-  // 🔥 解鎖按鈕
-  setTimeout(() => {
+  setTimeout(()=>{
     isLoading = false;
     document.querySelector("button").disabled = false;
-  }, 800);
+  },600);
 }
 
 function render(data){
 
-  // 1. 不成功
-  if (data.status && (data.status.includes("不成功") || data.status.includes("未成功"))) {
-    result().innerHTML =
-      `<div class="reject-msg">您的報名不成功，<br>請至服務台洽詢。</div>`;
+  if(data.status && (data.status.includes("不成功") || data.status.includes("未成功"))){
+    result().innerHTML = `<div class="reject-msg">報名未成功<br>請洽服務台</div>`;
     return;
   }
 
-  // 2. 成功 / 已報到
-  if(data.already || data.success){
-    const title = data.already ? "已報到" : "報到成功";
-
+  if(data.success || data.already){
     result().innerHTML = `
-      <div class="success">${title}</div>
+      <div class="success">${data.already ? "已報到" : "報到成功"}</div>
       <div class="name-display">${data.name || ""}</div>
       <div class="serial">${data.serial || ""}</div>
-      <div class="footer-note">憑本畫面至服務台兌換闖關卡</div>
+      <div class="footer-note">請至服務台兌換</div>
     `;
     return;
   }
 
-  // 3. 查無資料
-  result().innerHTML =
-    `<div class="error">${data.message || "查無報名資料"}</div>`;
+  result().innerHTML = `<div class="error">${data.message || "查無資料"}</div>`;
 }
 
-/* 🔥 Enter鍵送出 */
-document.addEventListener("keydown", function(e){
-  if(e.key === "Enter"){
-    manualCheckin();
-  }
+/* Enter送出 */
+document.addEventListener("keydown", e=>{
+  if(e.key==="Enter") manualCheckin();
 });
 
-const result = () => document.getElementById("result");
-const nameInput = () => document.getElementById("name");
-const phoneInput = () => document.getElementById("phone");
+const result = ()=>document.getElementById("result");
 
 </script>
 

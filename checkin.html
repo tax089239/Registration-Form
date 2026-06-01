@@ -184,7 +184,7 @@ function render(data){
 
   result.innerHTML = `
     <div class="success">
-      ${data.already ? "已報到" : "報到成功"}
+      ${data.already ? "請至服務台完成報到程序" }
     </div>
     <div class="name">${data.name || ""}</div>
     <div class="serial">${serial}</div>
@@ -195,7 +195,7 @@ function render(data){
 function setLoading(isLoading){
   const btn = document.querySelector("button");
   btn.disabled = isLoading;
-  btn.innerText = isLoading ? "查詢中..." : "查詢 / 報到";
+  btn.innerText = isLoading ? "查詢中..." : "查詢";
 }
 
 /* ===== Enter 智能控制（已整合防雙觸發） ===== */

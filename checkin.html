@@ -6,47 +6,88 @@
 <title>活動報到查詢</title>
 
 <style>
-body{
-  font-family:"Microsoft JhengHei";
-  background:#f5f7fb;
-  margin:0;
-  padding:16px;
+body {
+  font-family: "Microsoft JhengHei", -apple-system, sans-serif;
+  background: #f0f2f5;
+  margin: 0;
+  padding: 20px;           /* 確保在任何裝置四周都有至少 20px 的留白 */
+  display: flex;
+  justify-content: center; 
+  align-items: center;     
+  min-height: 100vh;       
+  box-sizing: border-box;  /* 讓 padding 不影響 100vh 的計算 */
 }
 
-html,body{
-  height:100%;
-  margin:0;
-  padding:0;
+.container {
+  background: #ffffff;
+  width: 100%;             /* 改為 100%，由 body 的 padding 來控制邊距 */
+  max-width: 400px;        /* 電腦版保持精緻寬度 */
+  padding: 30px 24px;      
+  border-radius: 20px;     /* 稍微增加圓角感 */
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08); /* 更柔和的陰影 */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
 }
 
-.container{
-  height:100vh;
-  display:flex;
-  flex-direction:column;
+/* 結果區：彈性伸縮但保持最小空間 */
+#result {
+  flex: 1;                 /* 自動佔據剩餘空間 */
+  min-height: 140px;       /* 確保報到成功時的大序號有足夠空間 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  overflow-y: auto;        /* 訊息過長時可捲動，不破壞版面 */
 }
 
-input,button{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  border-radius:10px;
-  border:1px solid #ccc;
+input {
+  width: 100%;
+  padding: 14px 16px;
+  margin: 6px 0;
+  border-radius: 12px;     /* 圓角統一 */
+  border: 1.5px solid #eee; /* 邊框淡一點更清爽 */
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: all 0.2s;
+  -webkit-appearance: none; /* 移除 iOS 內建陰影 */
 }
 
-button{
-  background:#1976d2;
-  color:#fff;
-  border:none;
+input:focus {
+  outline: none;
+  border-color: #1976d2;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1); /* 聚焦時有光暈 */
 }
 
-.success{ color:#2e7d32; font-size:22px; font-weight:bold; text-align:center; }
-.error{ color:#d32f2f; text-align:center; }
-.name{ text-align:center; font-size:18px; }
-.serial{ text-align:center; font-size:30px; font-weight:bold; color:#ff9800; }
+button {
+  width: 100%;
+  padding: 15px;
+  margin-top: 15px;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.2s;
+}
 
+button:active {
+  transform: scale(0.98); /* 點擊時有下壓回饋感 */
+  background: #1565c0;
+}
 
+/* 狀態文字優化 */
+.success { color: #2e7d32; font-size: 26px; font-weight: bold; margin-bottom: 4px; }
+.name { font-size: 18px; color: #555; }
+.serial { font-size: 48px; font-weight: 900; color: #ff9800; margin: 5px 0; line-height: 1; }
+.error { color: #d32f2f; background: #fff1f0; padding: 12px; border-radius: 8px; width: 100%; text-align: center; }
 
-/* 結果區可穩定置中 */
+  /* 結果區可穩定置中 */
 #result{
   flex:1;
   overflow:auto;
@@ -69,18 +110,17 @@ input{
 </head>
 
 <body>
+  <div class="container">
+    <h2 style="text-align:center; margin-top:0; color:#333;">活動報到查詢</h2>
+    
+    <div id="result">
+        <div style="text-align:center; color:#999;">請輸入資料進行報到</div>
+    </div>
 
-<div class="container">
-
-<h3 style="text-align:center;">活動報到查詢</h3>
-
-<div id="result"></div>
-
-<input id="name" placeholder="姓名">
-<input id="phone" placeholder="手機末三碼">
-<button onclick="submit()">查詢 / 報到</button>
-
-</div>
+    <input id="name" type="text" placeholder="姓名" autocomplete="off">
+    <input id="phone" type="tel" placeholder="手機末三碼" maxlength="3">
+    <button onclick="submit()">查詢 / 報到</button>
+  </div>
 
 <script>
 

@@ -3,92 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>活動報到後台</title>
+<title>活動報到查詢</title>
 
 <style>
 body{
   font-family:"Microsoft JhengHei";
-  background:#f5f5f5;
+  background:#f5f7fb;
   margin:0;
-  padding:20px;
+  padding:16px;
 }
 
 .container{
-  background:#fff;
-  max-width:1200px;
+  max-width:520px;
   margin:auto;
+  background:#fff;
   padding:20px;
-  border-radius:20px;
+  border-radius:16px;
 }
 
-h1{ margin-top:0; }
-
-.stats{
-  display:flex;
-  gap:10px;
-  margin-bottom:15px;
-}
-
-.card{
-  flex:1;
-  background:#1976d2;
-  color:#fff;
-  text-align:center;
-  padding:15px;
-  border-radius:10px;
-}
-
-.card div{
-  font-size:26px;
-  font-weight:bold;
-}
-
-#search{
+input,button{
   width:100%;
   padding:12px;
-  border-radius:8px;
+  margin:6px 0;
+  border-radius:10px;
   border:1px solid #ccc;
-  margin-bottom:15px;
-  box-sizing:border-box;
 }
 
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-th,td{
-  border:1px solid #ddd;
-  padding:10px;
-  text-align:center;
-}
-
-th{
+button{
   background:#1976d2;
   color:#fff;
-}
-
-/* 狀態 */
-.status-ok{ color:#1976d2; font-weight:bold; }
-.status-done{ color:#2e7d32; font-weight:bold; }
-.status-bad{ color:#d32f2f; font-weight:bold; }
-
-.btn{
-  padding:6px 10px;
   border:none;
-  border-radius:5px;
-  cursor:pointer;
 }
 
-.btn-green{
-  background:#2e7d32;
-  color:#fff;
-}
+.success{ color:#2e7d32; font-size:22px; font-weight:bold; text-align:center; }
+.error{ color:#d32f2f; text-align:center; }
+.name{ text-align:center; font-size:18px; }
+.serial{ text-align:center; font-size:30px; font-weight:bold; color:#ff9800; }
 
-.small{
-  color:#888;
-  font-size:13px;
-}
 </style>
 </head>
 
@@ -96,30 +47,13 @@ th{
 
 <div class="container">
 
-<h1>📊 活動報到後台</h1>
+<h3 style="text-align:center;">活動報到查詢</h3>
 
-<div class="stats">
-  <div class="card">總數<div id="total">0</div></div>
-  <div class="card">已報到<div id="checked">0</div></div>
-  <div class="card">未報到<div id="notyet">0</div></div>
-</div>
+<div id="result"></div>
 
-<input id="search" placeholder="搜尋姓名 / 電話 / 序號..." oninput="searchData()">
-
-<table>
-<thead>
-<tr>
-  <th>序號</th>
-  <th>姓名</th>
-  <th>電話</th>
-  <th>狀態</th>
-  <th>時間</th>
-  <th>操作</th>
-</tr>
-</thead>
-
-<tbody id="tbody"></tbody>
-</table>
+<input id="name" placeholder="姓名">
+<input id="phone" placeholder="手機末三碼">
+<button onclick="submit()">查詢 / 報到</button>
 
 </div>
 
@@ -127,176 +61,45 @@ th{
 
 const API = "https://script.google.com/macros/s/AKfycbzW_WJxAEJBvmEeHG5SfUZPsTV5M41ngYctUC6m65cVmf9RSIc3FcKBRddCubpmzd63/exec";
 
-let dataAll = [];
-let lock = false;
-let loading = false;
-let timer = null;
+let loading=false;
 
-/* 初始化 */
-window.onload = () => {
-  load();
-  setInterval(load, 8000);
-};
-
-/* 安全 fetch */
-function fetchAll(){
-  return fetch(`${API}?action=all`).then(r => r.json());
-}
-
-/* 讀資料 */
-function load(){
+function submit(){
 
   if(loading) return;
-  loading = true;
 
-  fetchAll()
-    .then(res => {
-      dataAll = res || [];
-      render(dataAll);
-      loading = false;
-    })
-    .catch(() => loading = false);
-}
+  const name=document.getElementById("name").value;
+  const phone=document.getElementById("phone").value;
 
-/* 渲染 */
-function render(data){
-
-  let html = "";
-
-  for(let i=0;i<data.length;i++){
-
-    const r = data[i];
-    const status = r.status || "未報到";
-
-    let cls = "";
-    if(status === "已報到") cls = "status-done";
-    else if(status === "報名成功") cls = "status-ok";
-    else if(status && status.includes("不成功")) cls = "status-bad";
-
-    let btn = "";
-
-    if(status === "報名成功"){
-      btn = `<button class="btn btn-green"
-              onclick="checkin('${r.code}', this)">
-              確認
-             </button>`;
-    }
-    else if(status === "已報到"){
-      btn = `<span class="small">✔</span>`;
-    }
-    else{
-      btn = `<span class="small">-</span>`;
-    }
-
-    html += `
-    <tr>
-      <td>${r.serial || ""}</td>
-      <td>${r.name || ""}</td>
-      <td>${r.phone || ""}</td>
-      <td class="${cls}">${status}</td>
-      <td>${r.time || ""}</td>
-      <td>${btn}</td>
-    </tr>`;
+  if(!name||!phone){
+    alert("請輸入完整資料");
+    return;
   }
 
-  document.getElementById("tbody").innerHTML = html;
+  loading=true;
 
-  updateStats(data);
-}
-
-/* 統計 */
-function updateStats(data){
-
-  let total = 0;
-  let checked = 0;
-
-  for(let i=0;i<data.length;i++){
-
-    const s = data[i].status || "";
-
-    if(s && !s.includes("不成功")) total++;
-    if(s === "已報到") checked++;
-  }
-
-  document.getElementById("total").innerText = total;
-  document.getElementById("checked").innerText = checked;
-  document.getElementById("notyet").innerText = total - checked;
-}
-
-/* 報到（穩定版） */
-function checkin(code, btn){
-
-  if(lock) return;
-  lock = true;
-
-  btn.disabled = true;
-
-  fetch(API, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "update",
-      code,
-      status: "已報到"
-    })
+  fetch(`${API}?action=checkin&name=${encodeURIComponent(name)}&phone=${phone}`)
+  .then(r=>r.json())
+  .then(res=>{
+    render(res);
   })
-  .then(r => r.json())
-  .then(res => {
-
-    lock = false;
-    btn.disabled = false;
-
-    if(res.success){
-
-      const item = dataAll.find(x => x.code == code);
-      if(item){
-        item.status = "已報到";
-        item.time = "剛更新";
-      }
-
-      render(dataAll);
-
-    }else{
-      alert("更新失敗");
-    }
-  })
-  .catch(() => {
-    lock = false;
-    btn.disabled = false;
-    alert("網路錯誤");
+  .finally(()=>{
+    loading=false;
   });
 }
 
-/* 搜尋（防卡版） */
-function searchData(){
+function render(data){
 
-  clearTimeout(timer);
+  if(!data.success){
+    document.getElementById("result").innerHTML=
+    `<div class="error">${data.message||"查無資料"}</div>`;
+    return;
+  }
 
-  timer = setTimeout(() => {
-
-    const key = document.getElementById("search").value.toLowerCase();
-
-    if(!key){
-      render(dataAll);
-      return;
-    }
-
-    const filtered = [];
-
-    for(let i=0;i<dataAll.length;i++){
-      const r = dataAll[i];
-
-      if(
-        (r.name && r.name.includes(key)) ||
-        (r.phone && r.phone.includes(key)) ||
-        (String(r.serial).includes(key))
-      ){
-        filtered.push(r);
-      }
-    }
-
-    render(filtered);
-
-  }, 200);
+  document.getElementById("result").innerHTML=`
+    <div class="success">${data.already?"已報到":"報到成功"}</div>
+    <div class="name">${data.name||""}</div>
+    <div class="serial">${data.serial||""}</div>
+  `;
 }
 
 </script>

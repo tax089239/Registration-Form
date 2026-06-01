@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>活動報到系統</title>
+
+<style>
+body {
+  margin:0;
+  padding:20px;
+  font-family:"Microsoft JhengHei";
+  background:#f5f7fb;
+  text-align:center;
+}
+
+.container {
+  max-width:500px;
+  margin:auto;
+  background:#fff;
+  padding:30px;
+  border-radius:20px;
+}
+
+#result {
+  margin-bottom: 20px;
+  min-height: 120px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+
+.success {
+  color:#ff0000;
+  font-size:36pt;
+  font-weight:bold;
+  margin:10px 0;
+}
+
+.name-display {
+  color:#000;
+  font-size:24pt;
+  margin:5px 0;
+}
+
+.serial {
+  color:#ff9800;
+  font-size:48pt;
+  font-weight:bold;
+  margin:10px 0;
+}
+
+.footer-note {
+  color:#666;
+  font-size:14pt;
+  margin-top:15px;
+  border-top:1px dashed #ccc;
+  padding-top:10px;
+}
+
+.reject-msg {
+  color:#d32f2f;
+  font-size:24pt;
+  font-weight:bold;
+  line-height:1.5;
+}
+
+.error {
+  color:#ff0000;
+  font-size:20pt;
+}
+
+input {
+  width:100%;
+  padding:15px;
+  margin:10px 0;
+  border-radius:10px;
+  border:1px solid #ccc;
+  text-align:center;
+  font-size:16px;
+}
+
+button {
+  width:100%;
+  padding:15px;
+  border:none;
+  background:#1976d2;
+  color:#fff;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:18px;
+}
+
+button:disabled {
+  background:#ccc;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>活動報到系統</h1>
+
+  <div id="result"></div>
+
+  <input id="name" placeholder="姓名">
+  <input id="phone" placeholder="手機末三碼">
+
+  <button onclick="manualCheckin()">立即報到</button>
+</div>
+
+<script>
+
+const API = "https://script.google.com/macros/s/AKfycbx2fLcCaE7WIHoRNbJdtlrHQxO1miu8wW6j0M2NfWRai4qO7l34rvTdeXuRUOfBRRx_/exec";
+
+function manualCheckin(){
+  const btn = document.querySelector("button");
+  const name = nameInput().value.trim();
+  const phone = phoneInput().value.trim();
+
+  if(!name || !phone){
+    alert("請輸入完整資料");
+    return;
+  }
+
+  btn.disabled = true;
+  sendCheckin(name, phone);
+
+  setTimeout(() => {
+    btn.disabled = false;
+  }, 2000);
+}
+
+async function sendCheckin(name, phone){
+  try {
+    const url = `${API}?action=checkin&name=${encodeURIComponent(name)}&phone=${phone}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    render(data);
+  } catch(err){
+    render({ success:false, message:"系統連線失敗" });
+  }
+}
+
+function render(data){
+
+  // 1. 報名不成功
+  if (data.status && (data.status.includes("不成功") || data.status.includes("未成功"))) {
+    result().innerHTML =
+      `<div class="reject-msg">您的報名不成功，<br>請至服務台洽詢。</div>`;
+    return;
+  }
+
+  // 2. 已報到 / 成功
+  if(data.already || data.success){
+    const title = data.already ? "已報到" : "報到成功";
+
+    result().innerHTML = `
+      <div class="success">${title}</div>
+      <div class="name-display">${data.name || ""}</div>
+      <div class="serial">${data.serial || ""}</div>
+      <div class="footer-note">憑本畫面至服務台兌換闖關卡</div>
+    `;
+    return;
+  }
+
+  // 3. 查無資料
+  result().innerHTML =
+    `<div class="error">${data.message || "查無報名資料"}</div>`;
+}
+
+const result = () => document.getElementById("result");
+const nameInput = () => document.getElementById("name");
+const phoneInput = () => document.getElementById("phone");
+
+</script>
+
+</body>
+</html>

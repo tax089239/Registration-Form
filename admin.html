@@ -227,38 +227,35 @@ function render(data){
 }
 
 /* ===== 報到 ===== */
-function checkin(code,btn){
-  if(btn.disabled) return;
-  if(checkinLock.has(code)) return;
+/* 報到改用 GET 避免 CORS 報錯 */
+function checkin(code, btn) {
+  if (btn.disabled) return;
+  if (checkinLock.has(code)) return;
   checkinLock.add(code);
   btn.disabled = true;
   btn.innerText = "處理中...";
-  fetch(API,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
-    body:JSON.stringify({
-      action:"update",
-      code:code,
-      status:"已報到"
+
+  // 改成 GET 傳遞 update 動作
+  fetch(`${API}?action=update&code=${code}`)
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        load(); // 重新讀取列表
+      } else {
+        alert("報到失敗：" + (res.msg || "未知錯誤"));
+      }
     })
-  })
-  .then(r=>r.json())
-  .then(()=>{
-    load();
-  })
-  .catch(err=>{
-    console.error(err);
-    alert("報到失敗");
-  })
-  .finally(()=>{
-    setTimeout(()=>{
-      checkinLock.delete(code);
-      btn.disabled = false;
-      btn.innerText = "報到";
-    },800);
-  });
+    .catch(err => {
+      console.error(err);
+      alert("網路連線異常");
+    })
+    .finally(() => {
+      setTimeout(() => {
+        checkinLock.delete(code);
+        btn.disabled = false;
+        btn.innerText = "報到";
+      }, 800);
+    });
 }
 
 /* ===== 搜尋 ===== */

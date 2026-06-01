@@ -97,18 +97,8 @@ th{ background:#1976d2; color:#fff; }
 
 <body>
 
-<!-- 登入 -->
-<div id="loginBox">
-  <div class="login-panel">
-    <h3>管理員登入</h3>
-    <input id="user" placeholder="帳號"><br>
-    <input id="pass" type="password" placeholder="密碼"><br>
-    <button class="btn-blue" onclick="login()">登入</button>
-  </div>
-</div>
-
-<div class="container" id="main" style="display:none;">
-
+ <div class="container" id="main">
+   
 <h1>
   📊 活動報到後台
   <span id="syncStatus"
@@ -156,29 +146,10 @@ let loading = false;
 let searching = false;
 let syncTimer = null;
 
-/* ===== 登入 ===== */
-function login(){
-  const u = document.getElementById("user").value.trim();
-  const p = document.getElementById("pass").value.trim();
-  if(u === "admin" && p === "231600"){
-    localStorage.setItem("login","1");
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("main").style.display = "block";
-    start();
-  }else{
-    alert("帳號或密碼錯誤");
-  }
-}
-
-/* ===== 自動登入 ===== */
 window.onload = () => {
-  if(localStorage.getItem("login")==="1"){
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("main").style.display = "block";
-    start();
-  }
+  start();
 };
-
+  
 /* ===== 啟動同步 ===== */
 function start(){
   load();

@@ -149,23 +149,45 @@ function submit(){
 }
 
 /* ===== UI 顯示 ===== */
+/* ===== UI 顯示 ===== */
 function render(data){
+
   const result = document.getElementById("result");
-  if(!data.success){
-    result.innerHTML = `<div class="error">${data.message || "查無資料"}</div>`;
+
+  const status = data.status || data.checkinStatus || "";
+  const serial = data.serial || "";
+
+  // 未報名成功或沒有序號
+  if(
+    !data.success ||
+    status !== "報名成功" ||
+    !serial
+  ){
+
+    result.innerHTML = `
+      <div class="error">
+        您並未報名成功<br>
+        如有疑問請至服務台洽詢
+      </div>
+    `;
+
     const name = document.getElementById("name");
     name.focus();
     name.select();
+
     return;
   }
 
-  // 成功清空
+  // 成功清空欄位
   document.getElementById("name").value = "";
   document.getElementById("phone").value = "";
+
   result.innerHTML = `
-    <div class="success">${data.already ? "已報到" : "報到成功"}</div>
+    <div class="success">
+      ${data.already ? "已報到" : "報到成功"}
+    </div>
     <div class="name">${data.name || ""}</div>
-    <div class="serial">${data.serial || ""}</div>
+    <div class="serial">${serial}</div>
   `;
 }
 

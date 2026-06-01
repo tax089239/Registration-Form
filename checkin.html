@@ -13,12 +13,16 @@ body{
   padding:16px;
 }
 
+html,body{
+  height:100%;
+  margin:0;
+  padding:0;
+}
+
 .container{
-  max-width:520px;
-  margin:auto;
-  background:#fff;
-  padding:20px;
-  border-radius:16px;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
 }
 
 input,button{
@@ -40,6 +44,27 @@ button{
 .name{ text-align:center; font-size:18px; }
 .serial{ text-align:center; font-size:30px; font-weight:bold; color:#ff9800; }
 
+
+
+/* 結果區可穩定置中 */
+#result{
+  flex:1;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* input 更好點擊 */
+input{
+  font-size:16px; /* 防 iOS 自動放大 */
+}
+
+/* loading狀態 */
+.loading{
+  color:#1976d2;
+  font-weight:bold;
+  text-align:center;
+}
+  
 </style>
 </head>
 
@@ -60,49 +85,96 @@ button{
 <script>
 
 const API = "https://script.google.com/macros/s/AKfycbzGuH6GDFiFz6kbrT64x88Pq33ll0rHpNOe7HpM8ydlD8tAsBHMnSKvLjJA4HZDHovg/exec";
+let loading = false;
+let lastEnter = 0;
 
-let loading=false;
-
+/* ===== 查詢 / 報到 ===== */
 function submit(){
-
   if(loading) return;
-
-  const name=document.getElementById("name").value;
-  const phone=document.getElementById("phone").value;
-
-  if(!name||!phone){
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  if(!name || !phone){
     alert("請輸入完整資料");
     return;
   }
-
-  loading=true;
-
+  loading = true;
+  setLoading(true);
   fetch(`${API}?action=checkin&name=${encodeURIComponent(name)}&phone=${phone}`)
-  .then(r=>r.json())
-  .then(res=>{
-    render(res);
-  })
-  .finally(()=>{
-    loading=false;
-  });
+    .then(r => r.json())
+    .then(res => render(res))
+    .finally(()=>{
+      loading = false;
+      setLoading(false);
+    });
 }
 
+/* ===== UI 顯示 ===== */
 function render(data){
-
+  const result = document.getElementById("result");
   if(!data.success){
-    document.getElementById("result").innerHTML=
-    `<div class="error">${data.message||"查無資料"}</div>`;
+    result.innerHTML = `<div class="error">${data.message || "查無資料"}</div>`;
+    const name = document.getElementById("name");
+    name.focus();
+    name.select();
     return;
   }
 
-  document.getElementById("result").innerHTML=`
-    <div class="success">${data.already?"已報到":"報到成功"}</div>
-    <div class="name">${data.name||""}</div>
-    <div class="serial">${data.serial||""}</div>
+  // 成功清空
+  document.getElementById("name").value = "";
+  document.getElementById("phone").value = "";
+  result.innerHTML = `
+    <div class="success">${data.already ? "已報到" : "報到成功"}</div>
+    <div class="name">${data.name || ""}</div>
+    <div class="serial">${data.serial || ""}</div>
   `;
 }
 
+/* ===== loading UI ===== */
+function setLoading(isLoading){
+  const btn = document.querySelector("button");
+  btn.disabled = isLoading;
+  btn.innerText = isLoading ? "查詢中..." : "查詢 / 報到";
+}
+
+/* ===== Enter 智能控制（已整合防雙觸發） ===== */
+document.addEventListener("keydown", (e)=>{
+  if(e.key !== "Enter") return;
+  const now = Date.now();
+  if(now - lastEnter < 300) return;
+  lastEnter = now;
+  if(loading) return;
+  const name = document.getElementById("name");
+  const phone = document.getElementById("phone");
+  if(document.activeElement === name){
+    phone.focus();
+    return;
+  }
+  if(document.activeElement === phone){
+    submit();
+  }
+});
+
+/* ===== 鍵盤置中 ===== */
+document.addEventListener("focusin", (e)=>{
+  if(e.target.tagName === "INPUT"){
+    setTimeout(()=>{
+      e.target.scrollIntoView({
+        behavior:"smooth",
+        block:"center"
+      });
+    },200);
+  }
+});
+
+/* ===== 初始 focus ===== */
+window.addEventListener("load", ()=>{
+  document.getElementById("name").focus();
+});
+
+document.addEventListener("touchstart", ()=>{}, {passive:true});
+
 </script>
+
 
 </body>
 </html>

@@ -161,24 +161,27 @@ function start(){
 }
   
 /* ===== 讀取資料 ===== */
+/* 優化後的邏輯：同步不中斷，但搜尋時維持過濾 */
 async function load(){
   if(loading) return;
-  if(searching) return;
   loading = true;
   try{
     const res = await fetch(API + "?action=all");
     const data = await res.json();
-    document.getElementById("syncStatus").innerText =
-      "🟢 已連線";
-    const hash = JSON.stringify(data);
-    if(hash === lastHash) return;
-    lastHash = hash;
+    document.getElementById("syncStatus").innerText = "🟢 已連線";
     dataAll = data;
-    render(data);
+    // 檢查搜尋框是否有字
+    const key = document.getElementById("search").value.trim().toLowerCase();
+    if(key) {
+      const filtered = dataAll.filter(r => 
+        String(r.name + r.phone + r.serial).toLowerCase().includes(key)
+      );
+      render(filtered);
+    } else {
+      render(dataAll);
+    }
   }catch(err){
-    console.error(err);
-    document.getElementById("syncStatus").innerText =
-      "🔴 連線失敗";
+    document.getElementById("syncStatus").innerText = "🔴 連線失敗";
   }finally{
     loading = false;
   }

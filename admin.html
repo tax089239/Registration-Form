@@ -192,27 +192,42 @@ function render(data){
   let html = "";
   let total = 0;
   let checked = 0;
+
   data.forEach(r => {
-    const status = r.checkinStatus || "";
+
+    const status =
+      r.checkinStatus === "已報到"
+        ? "已報到"
+        : (r.status || "");
+
     const time = r.time || "";
+
     let statusClass = "status-error";
+
     if (status === "已報到") {
       statusClass = "status-done";
       checked++;
+    } else {
+      statusClass = "status-success";
     }
+
     if (r.name) total++;
+
     html += `
       <tr>
         <td>${r.serial || ""}</td>
         <td>${r.name || ""}</td>
         <td>${r.phone || ""}</td>
+
         <td class="${statusClass}">
           ${status || "未報到"}
         </td>
+
         <td>${time}</td>
+
         <td>
           ${
-            status === "已報到"
+            r.checkinStatus === "已報到"
               ? `<span style="color:#2e7d32;font-weight:bold;">✔ 已報到</span>`
               : `<button class="btn-green" onclick="checkin('${r.code}',this)">報到</button>`
           }
@@ -220,6 +235,7 @@ function render(data){
       </tr>
     `;
   });
+
   document.getElementById("tbody").innerHTML = html;
   document.getElementById("total").innerText = total;
   document.getElementById("checked").innerText = checked;

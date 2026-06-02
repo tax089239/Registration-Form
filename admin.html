@@ -192,27 +192,24 @@ function render(data){
   let html = "";
   let total = 0;
   let checked = 0;
-
   data.forEach(r => {
-
     const status =
       r.checkinStatus === "已報到"
         ? "已報到"
         : (r.status || "");
-
     const time = r.time || "";
-
     let statusClass = "status-error";
-
     if (status === "已報到") {
       statusClass = "status-done";
       checked++;
-    } else {
+    }
+    else if (status === "報名成功") {
       statusClass = "status-success";
     }
-
+    else {
+      statusClass = "status-error";
+    }
     if (r.name) total++;
-
     html += `
       <tr>
         <td>${r.serial || ""}</td>
@@ -222,9 +219,7 @@ function render(data){
         <td class="${statusClass}">
           ${status || "未報到"}
         </td>
-
         <td>${time}</td>
-
         <td>
           ${
             r.checkinStatus === "已報到"

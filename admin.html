@@ -203,7 +203,7 @@ function render(data){
       statusClass = "status-done";
       checked++;
     }
-    else if (status === "報名成功") {
+    else if ((status || "").includes("報名成功")) {
       statusClass = "status-success";
     }
     else {
@@ -224,7 +224,7 @@ function render(data){
           ${
             r.checkinStatus === "已報到"
               ? `<span style="color:#2e7d32;font-weight:bold;">✔ 已報到</span>`
-              : r.status === "報名成功"
+              : (r.status || "").includes("報名成功")
                 ? `<button class="btn-green" onclick="checkin('${r.code}',this)">報到</button>`
                 : `<span style="color:#999;">－</span>`
           }
